@@ -1,8 +1,8 @@
 package main
 
 import (
-	"Wallet-Crypto-Crud/backend/database"
-	"Wallet-Crypto-Crud/backend/routes"
+	"backend/database"
+	"backend/routes"
 	"log"
 	"os"
 	"github.com/gofiber/fiber/v2"

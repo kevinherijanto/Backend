@@ -1,11 +1,12 @@
 package database
 
 import (
+	"backend/models"
 	"fmt"
 	"log"
+
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"Wallet-Crypto-Crud/backend/models"
 )
 
 var DB *gorm.DB

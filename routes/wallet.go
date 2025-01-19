@@ -2,8 +2,8 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"Wallet-Crypto-Crud/backend/database"
-	"Wallet-Crypto-Crud/backend/models"
+	"backend/database"
+	"backend/models"
 )
 
 func RegisterWalletRoutes(app *fiber.App) {

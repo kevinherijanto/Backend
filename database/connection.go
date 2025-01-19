@@ -12,7 +12,7 @@ var DB *gorm.DB
 
 func ConnectDB() {
 	// Railway MySQL connection details
-	dsn := "root:TKpUAYFvcQXHfmtiApbvAQTXsPzcGvoO@tcp(mysql.railway.internal:19382)/railway?charset=utf8mb4&parseTime=True&loc=Local"
+	dsn := "root:TKpUAYFvcQXHfmtiApbvAQTXsPzcGvoO@tcp(mysql.railway.internal:3306)/railway?charset=utf8mb4&parseTime=True&loc=Local"
 	var err error
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

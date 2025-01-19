@@ -32,4 +32,4 @@ RUN chmod +x /root/out
 EXPOSE 3000
 
 # Run the application
-CMD ["/root/out"]
+CMD ["./out"]

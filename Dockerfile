@@ -13,11 +13,14 @@ RUN go mod tidy
 # Copy the rest of the application
 COPY . .
 
-# Build the application
-RUN go build -o out main.go
+# Build the application statically (ensure no dependencies on libraries)
+RUN CGO_ENABLED=0 GOOS=linux go build -o out main.go
 
 # Runtime Stage
 FROM alpine:latest
+
+# Install dependencies needed to run the Go binary in Alpine
+RUN apk --no-cache add ca-certificates
 
 # Set the working directory inside the container for runtime
 WORKDIR /root/

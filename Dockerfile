@@ -1,35 +1,32 @@
-# Use the Go image for building
+# Build Stage
 FROM golang:1.23 as build
 
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the Go module files first to leverage caching
+# Copy go mod and sum files
 COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod tidy
 
-# Copy the rest of the application files
+# Copy the rest of the application
 COPY . .
 
-# Build the application for the correct architecture (Linux, AMD64)
-RUN GOOS=linux GOARCH=amd64 go build -o /app/out main.go
+# Build the application
+RUN go build -o out main.go
 
-# Use a minimal image for running the app
+# Runtime Stage
 FROM alpine:latest
 
-# Set the working directory inside the container
+# Set the working directory inside the container for runtime
 WORKDIR /root/
 
-# Copy the built binary from the build stage
+# Copy the built Go binary from the build stage
 COPY --from=build /app/out .
 
-# Ensure the binary is executable (this step is necessary if permissions need to be fixed)
-RUN chmod +x /root/out
-
-# Expose the application port
+# Expose the port your application will listen on
 EXPOSE 3000
 
-# Run the application
-CMD ["./out"]
+# Command to run your application
+CMD ["/root/out"]

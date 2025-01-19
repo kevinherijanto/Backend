@@ -22,4 +22,4 @@ COPY --from=build /app/out .
 EXPOSE 3000
 
 # Run the application
-CMD ["./out"]
+CMD ["/root/out"]

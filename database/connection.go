@@ -11,8 +11,7 @@ var DB *gorm.DB
 
 func ConnectDB() {
 	// Ganti string ini dengan string koneksi yang sudah diformat
-	dsn := "root:TKpUAYFvcQXHfmtiApbvAQTXsPzcGvoO@tcp(mysql.railway.internal:3306)/railway?charset=utf8mb4&parseTime=True&loc=Local"
-
+	dsn := "root:TKpUAYFvcQXHfmtiApbvAQTXsPzcGvoO@(autorack.proxy.rlwy.net:19382)/railway?charset=utf8mb4&parseTime=True&loc=Local"
 	// Koneksi ke database menggunakan GORM
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {

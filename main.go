@@ -37,11 +37,21 @@ func main() {
 
 	// WebSocket route for notifications
 	wsApp.Get("/ws", websocket.New(func(c *websocket.Conn) {
+		log.Println("WebSocket connection established")
+		defer c.Close()
+
 		for {
-			// Simple echo server for WebSocket
-			message := []byte("New wallet created!")
-			if err := c.WriteMessage(websocket.TextMessage, message); err != nil {
-				log.Println("Error sending WebSocket message:", err)
+			// Read message from the client
+			messageType, msg, err := c.ReadMessage()
+			if err != nil {
+				log.Println("Read error:", err)
+				break
+			}
+			log.Printf("Received: %s\n", msg)
+
+			// Echo message back to the client
+			if err := c.WriteMessage(messageType, msg); err != nil {
+				log.Println("Write error:", err)
 				break
 			}
 		}

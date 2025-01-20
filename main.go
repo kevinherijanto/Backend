@@ -13,11 +13,11 @@ import (
 )
 
 func main() {
-	// Main app for HTTP routes (app1)
-	httpApp := fiber.New()
+	// Main app for both HTTP routes and WebSocket
+	app := fiber.New()
 
 	// Enable CORS middleware for all origins
-	httpApp.Use(cors.New(cors.Config{
+	app.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin, Content-Type, Accept",
@@ -27,16 +27,13 @@ func main() {
 	database.ConnectDB()
 
 	// Enable logger middleware
-	httpApp.Use(logger.New())
+	app.Use(logger.New())
 
-	// Register routes
-	routes.RegisterWalletRoutes(httpApp)
-
-	// WebSocket server (app2)
-	wsApp := fiber.New()
+	// Register HTTP routes
+	routes.RegisterWalletRoutes(app)
 
 	// WebSocket route for notifications
-	wsApp.Get("/ws", websocket.New(func(c *websocket.Conn) {
+	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
 		log.Println("WebSocket connection established")
 		defer c.Close()
 
@@ -60,19 +57,9 @@ func main() {
 	// Get the PORT environment variable for Railway deployment
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "3000" // fallback if PORT isn't set
+		port = "3000" // Fallback if PORT isn't set
 	}
 
-	// Start HTTP server
-	go func() {
-		log.Fatal(httpApp.Listen(":" + port)) // Port for HTTP routes
-	}()
-
-	// Start WebSocket server on a different port (e.g., 8081)
-	go func() {
-		log.Fatal(wsApp.Listen(":" + "8081")) // Separate port for WebSocket
-	}()
-
-	// Block to keep both servers running
-	select {}
+	// Start the unified server on the same port
+	log.Fatal(app.Listen(":" + port))
 }

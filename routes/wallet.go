@@ -72,3 +72,4 @@ func deleteWallet(c *fiber.Ctx) error {
 	}
 	return c.SendStatus(204)
 }
+

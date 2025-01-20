@@ -55,6 +55,21 @@ func main() {
 		mutex.Unlock()
 		log.Println("WebSocket connection established")
 
+		// Fetch previous chat history when a new client connects
+		messages, err := fetchChatHistory()
+		if err != nil {
+			log.Println("Error fetching chat history:", err)
+		} else {
+			// Send chat history to the client
+			for _, message := range messages {
+				err := c.WriteJSON(message)
+				if err != nil {
+					log.Println("Error sending chat history:", err)
+					break
+				}
+			}
+		}
+
 		defer func() {
 			// Remove the client from the map when they disconnect
 			mutex.Lock()
@@ -116,12 +131,23 @@ func handleBroadcast() {
 	}
 }
 
+// fetchChatHistory fetches the previous chat messages from the database
+func fetchChatHistory() ([]ChatMessage, error) {
+	var messages []ChatMessage
+	// Use the global database connection from the database package
+	db := database.DB // GORM DB instance
+
+	// Fetch chat history from the database, ordered by creation date
+	err := db.Order("created_at asc").Find(&messages).Error
+	return messages, err
+}
+
 // saveMessageToDatabase saves the chat message to the database
 func saveMessageToDatabase(msg ChatMessage) error {
 	// Use the global database connection from the database package
 	db := database.DB // GORM DB instance
 
-	// Prepare the message for insertion
+	// Save the chat message to the database
 	err := db.Create(&msg).Error
 	return err
 }

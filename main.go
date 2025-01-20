@@ -3,7 +3,6 @@ package main
 import (
 	"backend/database"
 	"backend/routes"
-	"encoding/json"
 	"log"
 	"os"
 	"sync"

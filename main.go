@@ -6,19 +6,18 @@ import (
 	"log"
 	"os"
 	"sync"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/websocket/v2"
+	"gorm.io/gorm"
 )
 
 // ChatMessage represents the structure of a chat message
 type ChatMessage struct {
-	Username string    `json:"username"`
-	Message  string    `json:"message"`
-	Timestamp time.Time `json:"timestamp"`
+	Username string `json:"username"`
+	Message  string `json:"message"`
 }
 
 // Global variables to manage WebSocket connections
@@ -41,7 +40,6 @@ func main() {
 
 	// Initialize Database
 	database.ConnectDB()
-	defer database.CloseDB() // Ensure the DB connection is closed on app exit
 
 	// Enable logger middleware
 	app.Use(logger.New())
@@ -56,9 +54,6 @@ func main() {
 		clients[c] = true
 		mutex.Unlock()
 		log.Println("WebSocket connection established")
-
-		// Send previous messages from database to the client
-		sendChatHistory(c)
 
 		defer func() {
 			// Remove the client from the map when they disconnect
@@ -78,10 +73,11 @@ func main() {
 				break
 			}
 			log.Printf("Received message from %s: %s\n", msg.Username, msg.Message)
-
-			// Store the message in the database
-			saveMessageToDB(msg)
-
+			// Save the message to the database
+			err = saveMessageToDatabase(msg)
+			if err != nil {
+				log.Println("Error saving message to database:", err)
+			}
 			// Send the message to the broadcast channel
 			broadcast <- msg
 		}
@@ -120,38 +116,12 @@ func handleBroadcast() {
 	}
 }
 
-// sendChatHistory sends the last 100 messages to a new WebSocket client
-func sendChatHistory(c *websocket.Conn) {
-	rows, err := database.DB.Query("SELECT username, message, timestamp FROM messages ORDER BY timestamp DESC LIMIT 100")
-	if err != nil {
-		log.Println("Error fetching chat history:", err)
-		return
-	}
-	defer rows.Close()
+// saveMessageToDatabase saves the chat message to the database
+func saveMessageToDatabase(msg ChatMessage) error {
+	// Use the global database connection from the database package
+	db := database.DB // GORM DB instance
 
-	var messages []ChatMessage
-	for rows.Next() {
-		var msg ChatMessage
-		if err := rows.Scan(&msg.Username, &msg.Message, &msg.Timestamp); err != nil {
-			log.Println("Error scanning message:", err)
-			return
-		}
-		messages = append(messages, msg)
-	}
-
-	// Send the messages to the client
-	for _, msg := range messages {
-		if err := c.WriteJSON(msg); err != nil {
-			log.Println("Error sending message to client:", err)
-			return
-		}
-	}
-}
-
-// saveMessageToDB stores a chat message in the database
-func saveMessageToDB(msg ChatMessage) {
-	_, err := database.DB.Exec("INSERT INTO messages (username, message) VALUES ($1, $2)", msg.Username, msg.Message)
-	if err != nil {
-		log.Println("Error saving message to database:", err)
-	}
+	// Prepare the message for insertion
+	err := db.Create(&msg).Error
+	return err
 }

@@ -13,11 +13,11 @@ import (
 )
 
 func main() {
-	// Main app for HTTP routes
-	app := fiber.New()
+	// Main app for HTTP routes (app1)
+	httpApp := fiber.New()
 
 	// Enable CORS middleware for all origins
-	app.Use(cors.New(cors.Config{
+	httpApp.Use(cors.New(cors.Config{
 		AllowOrigins: "*",
 		AllowMethods: "GET,POST,PUT,DELETE",
 		AllowHeaders: "Origin, Content-Type, Accept",
@@ -27,27 +27,12 @@ func main() {
 	database.ConnectDB()
 
 	// Enable logger middleware
-	app.Use(logger.New())
+	httpApp.Use(logger.New())
 
 	// Register routes
-	routes.RegisterWalletRoutes(app)
+	routes.RegisterWalletRoutes(httpApp)
 
-	// Use the PORT environment variable for Railway deployment
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000" // fallback if PORT isn't set
-	}
-
-	// Define the path to the certs directory
-	certPath := "/backend/certs/cert.pem"
-	keyPath := "/backend/certs/key.pem"
-
-	// Start the main Fiber app with HTTPS (replace with your actual cert and key paths)
-	go func() {
-		log.Fatal(app.ListenTLS(":"+port, certPath, keyPath))
-	}()
-
-	// WebSocket server on port 8080 with HTTPS
+	// WebSocket server (app2)
 	wsApp := fiber.New()
 
 	// WebSocket route for notifications
@@ -62,6 +47,22 @@ func main() {
 		}
 	}))
 
-	// Start WebSocket server with HTTPS (replace with actual cert and key paths)
-	log.Fatal(wsApp.ListenTLS(":8080", certPath, keyPath))
+	// Get the PORT environment variable for Railway deployment
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" // fallback if PORT isn't set
+	}
+
+	// Start HTTP server
+	go func() {
+		log.Fatal(httpApp.Listen(":" + port)) // Port for HTTP routes
+	}()
+
+	// Start WebSocket server on a different port (e.g., 8081)
+	go func() {
+		log.Fatal(wsApp.Listen(":" + "8081")) // Separate port for WebSocket
+	}()
+
+	// Block to keep both servers running
+	select {}
 }

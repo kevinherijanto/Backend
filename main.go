@@ -39,8 +39,8 @@ func main() {
 	}
 
 	// Define the path to the certs directory
-	certPath := "./certs/cert.pem"
-	keyPath := "./certs/key.pem"
+	certPath := "/backend/certs/cert.pem"
+	keyPath := "/backend/certs/key.pem"
 
 	// Start the main Fiber app with HTTPS (replace with your actual cert and key paths)
 	go func() {

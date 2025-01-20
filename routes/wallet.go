@@ -12,6 +12,8 @@ func RegisterWalletRoutes(app *fiber.App) {
 	app.Get("/wallets/username/:username", getWalletsByUsername)
 	app.Put("/wallets/:id", updateWallet)
 	app.Delete("/wallets/:id", deleteWallet)
+
+	app.Get("/api/chat-history", getChatHistory)
 }
 
 func createWallet(c *fiber.Ctx) error {
@@ -29,6 +31,7 @@ func getWallets(c *fiber.Ctx) error {
 	database.DB.Find(&wallets)
 	return c.JSON(wallets)
 }
+
 
 func getWalletsByUsername(c *fiber.Ctx) error {
 	username := c.Params("username")
@@ -73,3 +76,13 @@ func deleteWallet(c *fiber.Ctx) error {
 	return c.SendStatus(204)
 }
 
+func getChatHistory(c *fiber.Ctx) error {
+	var chatHistory []models.ChatMessage
+
+	// Retrieve the chat history from the chat_messages table, ordered by timestamp
+	if err := database.DB.Order("timestamp ASC").Find(&chatHistory).Error; err != nil {
+		return c.Status(500).JSON(fiber.Map{"error": "Failed to retrieve chat history"})
+	}
+
+	return c.JSON(chatHistory)
+}

@@ -5,15 +5,15 @@ import (
 	"backend/routes"
 	"log"
 	"os"
+
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/websocket/v2"
 )
 
-
 func main() {
-	// Initialize Fiber app
+	// Main app for HTTP routes
 	app := fiber.New()
 
 	// Enable CORS middleware for all origins
@@ -24,15 +24,30 @@ func main() {
 	}))
 
 	// Initialize Database
-	database.ConnectDB(); 
+	database.ConnectDB()
+
 	// Enable logger middleware
 	app.Use(logger.New())
 
 	// Register routes
 	routes.RegisterWalletRoutes(app)
 
+	// Use the PORT environment variable for Railway deployment
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000" // fallback if PORT isn't set
+	}
+
+	// Start the main Fiber app
+	go func() {
+		log.Fatal(app.Listen(":" + port))
+	}()
+
+	// WebSocket server on port 8080
+	wsApp := fiber.New()
+
 	// WebSocket route for notifications
-	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
+	wsApp.Get("/ws", websocket.New(func(c *websocket.Conn) {
 		for {
 			// Simple echo server for WebSocket
 			message := []byte("New wallet created!")
@@ -42,13 +57,7 @@ func main() {
 			}
 		}
 	}))
-	// Use the PORT environment variable for Railway deployment
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "3000" // fallback if PORT isn't set
-	}
-	log.Fatal(app.Listen(":" + port))
 
-	// Start server
-	log.Fatal(app.Listen(":3000"))
+	// Start WebSocket server on port 8080
+	log.Fatal(wsApp.Listen(":8080"))
 }

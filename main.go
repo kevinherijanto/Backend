@@ -11,7 +11,7 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/websocket/v2"
-	"gorm.io/gorm"
+	_ "gorm.io/gorm"
 )
 
 // ChatMessage represents the structure of a chat message

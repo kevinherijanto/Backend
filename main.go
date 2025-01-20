@@ -38,13 +38,13 @@ func main() {
 		port = "3000" // fallback if PORT isn't set
 	}
 
-	// Get the cert and key paths from environment variables
-	cert := os.Getenv("CERT_PEM")
-	key := os.Getenv("KEY_PEM")
+	// Define the path to the certs directory
+	certPath := "./certs/cert.pem"
+	keyPath := "./certs/key.pem"
 
-	// Start the main Fiber app with HTTPS
+	// Start the main Fiber app with HTTPS (replace with your actual cert and key paths)
 	go func() {
-		log.Fatal(app.ListenTLS(":"+port, cert, key))
+		log.Fatal(app.ListenTLS(":"+port, certPath, keyPath))
 	}()
 
 	// WebSocket server on port 8080 with HTTPS
@@ -62,6 +62,6 @@ func main() {
 		}
 	}))
 
-	// Start WebSocket server with HTTPS
-	log.Fatal(wsApp.ListenTLS(":8080", cert, key))
+	// Start WebSocket server with HTTPS (replace with actual cert and key paths)
+	log.Fatal(wsApp.ListenTLS(":8080", certPath, keyPath))
 }

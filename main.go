@@ -143,7 +143,16 @@ func main() {
 			"token": tokenString,
 		})
 	})
+		// Protected profile route
+	app.Get("/protected/profile", func(c *fiber.Ctx) error {
+		// Get the username from the context
+		username := c.Locals("username").(string)
 
+		// Return the username as a response
+		return c.JSON(fiber.Map{
+			"username": username,
+		})
+	})
 	// WebSocket route for chat with JWT verification
 	app.Get("/ws", jwtMiddleware(), websocket.New(func(c *websocket.Conn) {
 		// Add the client to the map

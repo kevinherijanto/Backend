@@ -166,7 +166,7 @@ func main() {
 	
 		
 	// WebSocket route for chat with JWT verification
-	app.Get("/ws", jwtMiddleware(), websocket.New(func(c *websocket.Conn) {
+	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
 		// Add the client to the map
 		mutex.Lock()
 		clients[c] = true

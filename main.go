@@ -142,7 +142,7 @@ func main() {
 		})
 	})
 		// Protected profile route
-		app.Get("/protected/profile", func(c *fiber.Ctx) error {
+		app.Get("/protected/profile", jwtMiddleware(), func(c *fiber.Ctx) error {
 			username, ok := c.Locals("username").(string)
 			if !ok {
 				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{

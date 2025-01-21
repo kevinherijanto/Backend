@@ -63,8 +63,8 @@ func jwtMiddleware() fiber.Handler {
 
 		// Store the claims in the context
 		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-			c.Locals("user", claims)
-			c.Locals("username", claims.Username)
+            log.Println("JWT Claims:", claims)  // Log claims for debugging
+            c.Locals("username", claims.Username)
 		}
 		
 		return c.Next()
@@ -135,7 +135,7 @@ func main() {
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to generate token")
 		}
-
+		log.Println("Generated JWT Token:", tokenString)
 		// Return the generated token
 		return c.JSON(fiber.Map{
 			"token": tokenString,
@@ -149,7 +149,7 @@ func main() {
 					"error": "Unauthorized access",
 				})
 			}
-		
+			log.Println("Username from context:", username)
 			return c.JSON(fiber.Map{
 				"username": username,
 			})

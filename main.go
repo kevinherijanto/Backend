@@ -36,33 +36,6 @@ type Claims struct {
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }
-
-func generateJWT(c *fiber.Ctx) error {
-	username := c.FormValue("username")
-
-	// Create the JWT claims, including the username and expiration time
-	claims := Claims{
-		Username: username,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Token expires in 24 hours
-		},
-	}
-
-	// Create a new JWT token with claims
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	// Sign the token with the secret key
-	tokenString, err := token.SignedString(secretKey)
-	if err != nil {
-		return c.Status(fiber.StatusInternalServerError).SendString("Failed to generate token")
-	}
-
-	// Return the generated token
-	return c.JSON(fiber.Map{
-		"token": tokenString,
-	})
-}
-
 // JWT Middleware to validate token
 func jwtMiddleware() fiber.Handler {
 	return func(c *fiber.Ctx) error {
@@ -116,7 +89,31 @@ func main() {
 
 	// Register HTTP routes
 	routes.RegisterWalletRoutes(app)
-
+	app.Use("/protected", func(c *fiber.Ctx) error {
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Authorization header is missing",
+			})
+		}
+	
+		tokenString := authHeader[len("Bearer "):]
+	
+		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+			return secretKey, nil
+		})
+		if err != nil || !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Invalid or expired token",
+			})
+		}
+	
+		claims := token.Claims.(*Claims)
+		c.Locals("username", claims.Username)
+	
+		return c.Next()
+	})
+	
 	// JWT route for login (just username, no password)
 	app.Post("/login", func(c *fiber.Ctx) error {
 		username := c.FormValue("username")
@@ -144,15 +141,19 @@ func main() {
 		})
 	})
 		// Protected profile route
-	app.Get("/protected/profile", func(c *fiber.Ctx) error {
-		// Get the username from the context
-		username := c.Locals("username").(string)
-
-		// Return the username as a response
-		return c.JSON(fiber.Map{
-			"username": username,
+		app.Get("/protected/profile", func(c *fiber.Ctx) error {
+			username, ok := c.Locals("username").(string)
+			if !ok {
+				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+					"error": "Unauthorized access",
+				})
+			}
+		
+			return c.JSON(fiber.Map{
+				"username": username,
+			})
 		})
-	})
+		
 	// WebSocket route for chat with JWT verification
 	app.Get("/ws", jwtMiddleware(), websocket.New(func(c *websocket.Conn) {
 		// Add the client to the map

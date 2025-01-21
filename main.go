@@ -117,43 +117,41 @@ func main() {
 	
 	// JWT route for login (just username, no password)
 	app.Post("/login", func(c *fiber.Ctx) error {
-		username := c.FormValue("username")
-
-		// Create the JWT claims, which includes the username and expiry time
+		var requestBody struct {
+			Username string `json:"username"`
+		}
+	
+		// Parse the JSON body into the struct
+		if err := c.BodyParser(&requestBody); err != nil {
+			return c.Status(fiber.StatusBadRequest).SendString("Invalid JSON body")
+		}
+	
+		username := requestBody.Username
+		if username == "" {
+			return c.Status(fiber.StatusBadRequest).SendString("Username is required")
+		}
+	
+		// Create the JWT claims
 		claims := Claims{
 			Username: username,
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Token expires in 24 hours
 			},
 		}
-
-		// Create the token using your secret key
+	
+		// Create and sign the JWT
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		// Sign the token with your secret key
 		tokenString, err := token.SignedString(secretKey)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString("Failed to generate token")
 		}
-		log.Println("Generated JWT Token:", tokenString)
+	
 		// Return the generated token
 		return c.JSON(fiber.Map{
 			"token": tokenString,
 		})
 	})
-		// Protected profile route
-		app.Get("/protected/profile", jwtMiddleware(), func(c *fiber.Ctx) error {
-			username, ok := c.Locals("username").(string)
-			if !ok {
-				return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-					"error": "Unauthorized access",
-				})
-			}
-			log.Println("Username from context:", username)
-			return c.JSON(fiber.Map{
-				"username": username,
-			})
-		})
+	
 		
 	// WebSocket route for chat with JWT verification
 	app.Get("/ws", jwtMiddleware(), websocket.New(func(c *websocket.Conn) {

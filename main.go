@@ -6,11 +6,13 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/websocket/v2"
+	"github.com/golang-jwt/jwt/v4"
 	_ "gorm.io/gorm"
 )
 
@@ -26,6 +28,74 @@ var (
 	broadcast = make(chan ChatMessage)         // Broadcast channel for messages
 	mutex     sync.Mutex                       // Mutex to handle concurrent access to clients map
 )
+
+var secretKey = []byte("your-secret-key")
+
+// Claims represents the structure of the JWT claim
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
+}
+
+func generateJWT(c *fiber.Ctx) error {
+	username := c.FormValue("username")
+
+	// Create the JWT claims, including the username and expiration time
+	claims := Claims{
+		Username: username,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Token expires in 24 hours
+		},
+	}
+
+	// Create a new JWT token with claims
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	// Sign the token with the secret key
+	tokenString, err := token.SignedString(secretKey)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString("Failed to generate token")
+	}
+
+	// Return the generated token
+	return c.JSON(fiber.Map{
+		"token": tokenString,
+	})
+}
+
+// JWT Middleware to validate token
+func jwtMiddleware() fiber.Handler {
+	return func(c *fiber.Ctx) error {
+		// Get token from the Authorization header
+		authHeader := c.Get("Authorization")
+		if authHeader == "" {
+			return c.Status(fiber.StatusUnauthorized).SendString("Missing or invalid token")
+		}
+
+		// Extract the token part
+		tokenString := authHeader[len("Bearer "):]
+
+		// Parse and validate the token
+		token, err := jwt.ParseWithClaims(tokenString, &Claims{}, func(token *jwt.Token) (interface{}, error) {
+			// Validate signing method
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fiber.NewError(fiber.StatusUnauthorized, "Invalid signing method")
+			}
+			return secretKey, nil
+		})
+
+		if err != nil || !token.Valid {
+			return c.Status(fiber.StatusUnauthorized).SendString("Invalid token")
+		}
+
+		// Store the claims in the context
+		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+			c.Locals("user", claims)
+		}
+
+		return c.Next()
+	}
+}
 
 func main() {
 	// Main app for both HTTP routes and WebSocket
@@ -47,8 +117,35 @@ func main() {
 	// Register HTTP routes
 	routes.RegisterWalletRoutes(app)
 
-	// WebSocket route for chat
-	app.Get("/ws", websocket.New(func(c *websocket.Conn) {
+	// JWT route for login (just username, no password)
+	app.Post("/login", func(c *fiber.Ctx) error {
+		username := c.FormValue("username")
+
+		// Create the JWT claims, which includes the username and expiry time
+		claims := Claims{
+			Username: username,
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Token expires in 24 hours
+			},
+		}
+
+		// Create the token using your secret key
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+		// Sign the token with your secret key
+		tokenString, err := token.SignedString(secretKey)
+		if err != nil {
+			return c.Status(fiber.StatusInternalServerError).SendString("Failed to generate token")
+		}
+
+		// Return the generated token
+		return c.JSON(fiber.Map{
+			"token": tokenString,
+		})
+	})
+
+	// WebSocket route for chat with JWT verification
+	app.Get("/ws", jwtMiddleware(), websocket.New(func(c *websocket.Conn) {
 		// Add the client to the map
 		mutex.Lock()
 		clients[c] = true

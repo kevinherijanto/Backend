@@ -151,6 +151,18 @@ func main() {
 			"token": tokenString,
 		})
 	})
+		// Protected profile route
+	app.Get("/protected/profile", jwtMiddleware(), func(c *fiber.Ctx) error {
+		username, ok := c.Locals("username").(string)
+		if !ok {
+			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+				"error": "Unauthorized access",
+			})
+		}
+		return c.JSON(fiber.Map{
+			"username": username,
+		})
+	})
 	
 		
 	// WebSocket route for chat with JWT verification

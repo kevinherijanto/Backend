@@ -64,8 +64,9 @@ func jwtMiddleware() fiber.Handler {
 		// Store the claims in the context
 		if claims, ok := token.Claims.(*Claims); ok && token.Valid {
 			c.Locals("user", claims)
+			c.Locals("username", claims.Username)
 		}
-
+		
 		return c.Next()
 	}
 }

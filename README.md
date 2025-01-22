@@ -1,30 +1,84 @@
-
----
-
 ### **Backend - `README.md`**
 
-```markdown
 # Crypto Wallet Tracker Backend
 
-This project is the backend application for the Crypto Wallet Tracker. It provides APIs for wallet management, user authentication, and real-time communication via WebSocket.
+Backend untuk Crypto Wallet Tracker menyediakan API untuk manajemen wallet, autentikasi menggunakan JWT, dan komunikasi real-time dengan WebSocket.
 
-## Features
+## Fitur
 
-- RESTful APIs for wallet management.
-- WebSocket server for real-time chat.
-- JWT authentication for secure access.
-- Error handling and validation.
+- API RESTful untuk manajemen wallet.
+- Server WebSocket untuk chat real-time.
+- Autentikasi JWT untuk akses aman.
 
-## Technologies Used
+## Teknologi yang Digunakan
 
-- Go (Golang)
+- Gofiber (Golang)
 - Gorilla WebSocket
-- JWT for authentication
-- PostgreSQL (optional, if database is used)
+- JWT untuk autentikasi
+- PostgreSQL (opsional jika menggunakan database)
 
-## Setup Instructions
+## Cara Install dan Menjalankan Aplikasi
 
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/your-repo/backend.git
-   cd backend
+### 1. Clone Repository
+```bash
+git clone https://github.com/your-repo/backend.git
+cd backend
+```
+
+### 2. Install Dependencies
+Pastikan Go sudah terinstall, lalu jalankan:
+```bash
+go mod tidy
+```
+
+### 3. Konfigurasi Environment
+Buat file `.env` di root project dengan isi berikut:
+```plaintext
+PORT=8080
+JWT_SECRET=your-secret-key
+```
+
+### 4. Menjalankan Aplikasi
+Jalankan perintah berikut:
+```bash
+go run main.go
+```
+Backend akan berjalan di `http://localhost:8080`.
+
+### 5. Build untuk Produksi
+Untuk membuat binary produksi, jalankan:
+```bash
+go build -o backend
+```
+
+## Endpoint API
+
+### Wallets
+- `GET /wallets/username/:username`  
+  Mendapatkan wallet berdasarkan username.
+- `POST /wallets`  
+  Membuat wallet baru.
+- `PUT /wallets/:id`  
+  Mengupdate wallet berdasarkan ID.
+- `DELETE /wallets/:id`  
+  Menghapus wallet berdasarkan ID.
+
+### Chat
+- `GET /api/chat-history`  
+  Mendapatkan riwayat chat.
+
+### Autentikasi
+- `POST /login`  
+  Menghasilkan JWT berdasarkan username.
+
+## Penggunaan WebSocket
+
+Hubungkan ke server WebSocket:
+```
+ws://localhost:8080/ws
+```
+
+Kirim dan terima pesan secara real-time:
+```json
+{ "type": "message", "username": "user1", "message": "Hello, world!" }
+```

@@ -3,8 +3,11 @@ package models
 import "gorm.io/gorm"
 
 type Announcement struct {
-    ID      uint   `json:"id" gorm:"primaryKey"`  // Primary key
-    Title   string `json:"title"`                // Judul pengumuman
-    Content string `json:"content"`              // Isi pengumuman
-    gorm.Model                                   // Timestamp fields (CreatedAt, UpdatedAt, DeletedAt)
+    gorm.Model
+    Title   string `json:"title"`
+    Content string `json:"content"`
+}
+// TableName overrides the default table name used by GORM
+func (Announcement) TableName() string {
+    return "announcements"  // Ensure the table name is "announcements" (plural)
 }

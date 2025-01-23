@@ -89,23 +89,24 @@ func getChatHistory(c *fiber.Ctx) error {
 	return c.JSON(chatHistory)
 }
 func createAnnouncement(c *fiber.Ctx) error {
-	announcement := new(models.Announcement)
+    announcement := new(models.Announcement)
 
-	// Parse JSON body
-	if err := c.BodyParser(announcement); err != nil {
-		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-			"error": "Failed to parse request body. Ensure the body is in valid JSON format.",
-		})
-	}
+    // Parse JSON body
+    if err := c.BodyParser(announcement); err != nil {
+        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+            "error": "Failed to parse request body. Ensure the body is in valid JSON format.",
+        })
+    }
 
-	// Save to database
-	if err := database.DB.Create(&announcement).Error; err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-			"error": "Failed to save announcement to the database.",
-		})
-	}
+    // Save to database
+    if err := database.DB.Create(&announcement).Error; err != nil {
+        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+            "error": "Failed to save announcement to the database.",
+        })
+    }
 
-	return c.Status(fiber.StatusCreated).JSON(announcement)
+    // Return the created announcement
+    return c.Status(fiber.StatusCreated).JSON(announcement)
 }
 
 func getAnnouncements(c *fiber.Ctx) error {

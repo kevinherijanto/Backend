@@ -14,6 +14,8 @@ func RegisterWalletRoutes(app *fiber.App) {
 	app.Delete("/wallets/:id", deleteWallet)
 
 	app.Get("/api/chat-history", getChatHistory)
+	app.Post("/announcements", createAnnouncement)
+	app.Get("/announcements", getAnnouncements)
 }
 
 func createWallet(c *fiber.Ctx) error {
@@ -86,40 +88,41 @@ func getChatHistory(c *fiber.Ctx) error {
 
 	return c.JSON(chatHistory)
 }
+func createAnnouncement(c *fiber.Ctx) error {
+	announcement := new(models.Announcement)
 
-func RegisterAnnouncementRoutes(app *fiber.App) {
-	// CREATE Announcement
-	app.Post("/announcement", func(c *fiber.Ctx) error {
-		announcement := new(models.Announcement)
+	// Parse JSON body
+	if err := c.BodyParser(announcement); err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Failed to parse request body. Ensure the body is in valid JSON format.",
+		})
+	}
 
-		// Parse JSON body
-		if err := c.BodyParser(announcement); err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
-				"error": "Failed to parse request body",
-			})
-		}
+	// Save to database
+	if err := database.DB.Create(&announcement).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to save announcement to the database.",
+		})
+	}
 
-		// Save to database
-		if err := database.DB.Create(&announcement).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to save announcement",
-			})
-		}
+	return c.Status(fiber.StatusCreated).JSON(announcement)
+}
 
-		return c.Status(fiber.StatusCreated).JSON(announcement)
-	})
+func getAnnouncements(c *fiber.Ctx) error {
+	var announcements []models.Announcement
 
-	// READ Announcements
-	app.Get("/announcements", func(c *fiber.Ctx) error {
-		var announcements []models.Announcement
+	// Fetch all announcements from the database
+	if err := database.DB.Find(&announcements).Error; err != nil {
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+			"error": "Failed to retrieve announcements from the database.",
+		})
+	}
 
-		// Fetch all announcements from database
-		if err := database.DB.Find(&announcements).Error; err != nil {
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
-				"error": "Failed to fetch announcements",
-			})
-		}
+	if len(announcements) == 0 {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"message": "No announcements found.",
+		})
+	}
 
-		return c.JSON(announcements)
-	})
+	return c.JSON(announcements)
 }

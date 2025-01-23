@@ -107,7 +107,7 @@ func main() {
 			return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 				"error": "Invalid or expired token",
 			})
-		}
+		}	
 	
 		claims := token.Claims.(*Claims)
 		c.Locals("username", claims.Username)

@@ -86,3 +86,40 @@ func getChatHistory(c *fiber.Ctx) error {
 
 	return c.JSON(chatHistory)
 }
+
+func RegisterAnnouncementRoutes(app *fiber.App) {
+	// CREATE Announcement
+	app.Post("/announcement", func(c *fiber.Ctx) error {
+		announcement := new(models.Announcement)
+
+		// Parse JSON body
+		if err := c.BodyParser(announcement); err != nil {
+			return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+				"error": "Failed to parse request body",
+			})
+		}
+
+		// Save to database
+		if err := database.DB.Create(&announcement).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to save announcement",
+			})
+		}
+
+		return c.Status(fiber.StatusCreated).JSON(announcement)
+	})
+
+	// READ Announcements
+	app.Get("/announcements", func(c *fiber.Ctx) error {
+		var announcements []models.Announcement
+
+		// Fetch all announcements from database
+		if err := database.DB.Find(&announcements).Error; err != nil {
+			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
+				"error": "Failed to fetch announcements",
+			})
+		}
+
+		return c.JSON(announcements)
+	})
+}

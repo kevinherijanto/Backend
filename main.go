@@ -3,6 +3,7 @@ package main
 import (
 	"backend/database"
 	"backend/routes"
+	"backend/models"
 	"log"
 	"os"
 	"sync"
@@ -85,6 +86,7 @@ func main() {
 	// Initialize Database
 	database.ConnectDB()
 
+	database.DB.AutoMigrate(&models.Announcement{})
 	// Enable logger middleware
 	app.Use(logger.New())
 

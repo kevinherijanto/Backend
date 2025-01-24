@@ -62,6 +62,11 @@ go build -o backend
   Mengupdate wallet berdasarkan ID.
 - `DELETE /wallets/:id`  
   Menghapus wallet berdasarkan ID.
+### Announcements
+- GET /announcements
+Mendapatkan daftar semua pengumuman.
+- POST /announcements
+Membuat pengumuman baru.
 
 ### Chat
 - `GET /api/chat-history`  
